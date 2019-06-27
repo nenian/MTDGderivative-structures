@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+"""
+Created on Fri Sep  9 10:23:58 2016
+
+@author: nenian charles
+"""
+
+from UserInput import Conf
+from pymatgen.io.vasp import Poscar
+import lattice_decoration 
+import os
+import time
+import argparse
+
+start_time = time.time()
+    
+""" Get input data first """ 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--input", help="file with calculation variables",
+                    required=True, metavar="FILE")
+
+parser.add_argument("-p", "--parent", help="parent file in vasp POSCAR format",
+                    required=True, metavar="FILE")  
+                    
+args = parser.parse_args()
+
+invars = Conf(args.input)
+
+''' Import initial parent structure '''
+
+poscar = Poscar.from_file(args.parent)
+parent_struct = poscar.structure
+#print(os.chdir(invars.run_dir))
+if invars.restart == ".FALSE.":
+    
+    with open("ORDERING_OUTPUT.txt", 'a') as file:
+    
+        file.write("Input Structure Info:\n\n")
+        file.write("-------------------------------------------------------------------------------------\n\n")
+        file.write("{}\n\n".format(parent_struct))
+        file.write("-------------------------------------------------------------------------------------\n\n")
+
+def end_status(status):
+    if status == 'success':
+        with open("ORDERING_OUTPUT.txt", 'a') as file:
+            file.write("Yor job has ended sucessfully\n")
+            file.write("-------------------------------------------------------------------------------------\n")
+            file.write("-------------------------------------------------------------------------------------\n\n")
+            file.write("Time Elapsed (sec): {}\n".format(time.time() - start_time))
+            file.write("-------------------------------------------------------------------------------------\n\n")
+    elif status == 'error':
+        with open("ORDERING_OUTPUT.txt", 'a') as file:
+            file.write("FATAL ERROR!!!\n\n")
+            
+            
+if __name__ == '__main__':            
+    '''Cation decoration '''
+    if invars.calc_mode == 1:
+        collect_structures = lattice_decoration.cation_decorate(invars, parent_struct)
+
+        collect_structures, total_structs = lattice_decoration.declutter_dict(collect_structures,invars.nprocs)
+        #collect Bravais lattice info
+        lattice_decoration.bravais_collect(collect_structures, total_structs)
+        lattice_decoration.write_to_file(invars, collect_structures)
+        
+        end_status('success')
+        '''Anion Decoration '''    
+    elif invars.calc_mode == 2:
+        collect_structures = lattice_decoration.anions_decorate(invars, parent_struct)
+        collect_structures, total_structs = lattice_decoration.declutter_dict(collect_structures,invars.nprocs)
+        #collect Bravais lattice info
+        lattice_decoration.bravais_collect(collect_structures, total_structs)
+        lattice_decoration.write_to_file(invars, collect_structures)
+    elif invars.calc_mode == 3:
+        collect_structures = lattice_decoration.unrestricted_decorate(invars, parent_struct)
+        collect_structures, total_structs = lattice_decoration.declutter_dict(collect_structures,invars.nprocs)
+        
+        lattice_decoration.bravais_collect(collect_structures, total_structs)
+        lattice_decoration.write_to_file(invars, collect_structures)
+        end_status('success')
+    elif invars.calc_mode == "ERROR":
+        print("FATAL ERROR!")
+        end_status('error')
+    elif invars.calc_mode == "post-processing":
+    
+        #plotting.plot()
+        end_status('success')

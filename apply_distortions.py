@@ -2,7 +2,8 @@ import os
 import numpy as np
 from pymatgen import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.io.vaspio import Poscar
+from pymatgen.io.vasp import Poscar
+import spglib
 #from ordering_lattice import compare_structures
 
 ''' Rotate cell by 90 degrees to ensure that all possible
@@ -58,8 +59,8 @@ def match_atoms(str1, invars, dist_dir):
             new_coords = np.append(new_coords, coord_holder)
         new_coords = new_coords.reshape(str1.num_sites,3)    
         # Arrange atoms in a list that matches the list of the a0a0a0 structure
-        distorted_structure = Structure(str1.lattice_vectors(), str1.species, new_coords)
-        space_group = int(SpacegroupAnalyzer(distorted_structure).get_spacegroup_number())
+        distorted_structure = Structure(str1.lattice, str1.species, new_coords)
+        space_group = int(SpacegroupAnalyzer(distorted_structure, invars.symprec).get_space_group_number())
         str_name = "{}-SG-{}.vasp".format(filename, space_group)
         if os.path.isfile(str_name):
             f.write("{}\t\t\t{}\n".format(filename,space_group))          

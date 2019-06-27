@@ -5,13 +5,13 @@ Created on Thu Oct 13 13:15:04 2016
 @author: nenian charles
 """
 
-from pymatgen.io.vaspio import Poscar
-from pymatgen.io.cifio import CifParser
-import os, itertools
+from pymatgen.io.vasp import Poscar
+from pymatgen.io.cif import CifParser
+import os, itertools, os.path
 
 """User please provide some basic info about the units you are searching for """
 cations_indx = [] #If you know the indices of the focal cation, list them
-cati = 'Sc' # If you don't have the indices provide the name of the species
+cati = 'Na' # If you don't have the indices provide the name of the species
 ani = 'O' # provide the name of the anion specie you are searching for
 cutoff = 2.5 #Angstroms
 
@@ -20,16 +20,16 @@ f.close()
 
 
 #Search for derivative structure folders
-for dictionary in os.walk(".").next()[1]:
+for dictionary in next(os.walk('.'))[1]:
     f = open("isomer_conformations.txt", 'a')    
     os.chdir(dictionary)
     f.write("{}\n".format(dictionary))
     f.write("structure #\tIsomer conformation\n")
     f.write("-------------------------------------------------------------------------------\n")
-    structures_list = [file for file in os.walk(".").next()[2] if file.endswith(".vasp")]
+    structures_list = [file for file in next(os.walk('.'))[2] if file.endswith(".vasp")]
     #print len(structures_list)
     if len(structures_list) == 0:
-        structures_list = [file for file in os.walk(".").next()[2] if file.endswith(".cif")]
+        structures_list = [file for file in next(os.walk('.'))[2] if file.endswith(".cif")]
         if len(structures_list) == 0:
             print('no structures found')
             pass
@@ -69,13 +69,13 @@ for dictionary in os.walk(".").next()[1]:
     
         ordering_rank = list(set(ordering_rank))
         if len(ordering_rank) > 1:
-            print "somethings wrong"
+            print ("somethings wrong")
             break
         else:
             ordering_rank = ordering_rank[0]
         isomer_conformations = []    
         if ordering_rank == 1:
-            print "anion order doesn't support cis, trans, fac or mer"
+            print ("anion order doesn't support cis, trans, fac or mer")
             pass
         if ordering_rank == 2:
             site_angles = []
